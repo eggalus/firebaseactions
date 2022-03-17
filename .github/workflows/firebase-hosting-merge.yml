@@ -10,14 +10,22 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     defaults:
-        run:
-            working-directory: functions
+      run:
+        working-directory: functions
     steps:
       - uses: actions/checkout@v2
-      - run: npm ci && npm run build        
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - run: npm ci && npm run build
+#      - uses: FirebaseExtended/action-hosting-deploy@v0
+#        with:
+#          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+#          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLING_18531 }}'
+#          channelId: live
+#          projectId: wordling-18531
+      # Deploying the functions to firebase
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
         with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLING_18531 }}'
-          channelId: live
-          projectId: wordling-18531
+          args: deploy --only functions
+        env:
+          PROJECT_ID: wordling-18531
+          GCP_SA_KEY: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLING_18531 }}'
