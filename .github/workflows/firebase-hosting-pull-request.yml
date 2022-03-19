@@ -29,3 +29,4 @@ jobs:
         env:
           PROJECT_ID: wordling-18531
           GCP_SA_KEY: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLING_18531 }}'
+          GOOGLE_APPLICATION_CREDENTIALS:  '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLING_18531 }}'
