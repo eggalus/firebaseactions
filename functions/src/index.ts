@@ -124,7 +124,7 @@ async function updateCurrentWordFunc(wordLength: number, endsInSeconds: number):
 }
 
 export const scheduledFourLetterWordUpdate = functions.pubsub.schedule("0 0 0/4 * * ? *")
-    .timeZone("Coordinated Universal Time")
+    .timeZone("UTC")
     .onRun(async (context) => {
       const resp = await updateCurrentWordFunc(4, 14400);
       if (!resp.success) {
@@ -134,7 +134,7 @@ export const scheduledFourLetterWordUpdate = functions.pubsub.schedule("0 0 0/4 
     });
 
 export const scheduledFiveLetterWordUpdate = functions.pubsub.schedule("0 0 1/4 * * ? *")
-    .timeZone("Coordinated Universal Time")
+    .timeZone("UTC")
     .onRun(async (context) => {
       const resp = await updateCurrentWordFunc(5, 14400);
       if (!resp.success) {
@@ -144,7 +144,7 @@ export const scheduledFiveLetterWordUpdate = functions.pubsub.schedule("0 0 1/4 
     });
 
 export const scheduledSixLetterWordUpdate = functions.pubsub.schedule("0 0 2/4 * * ? *")
-    .timeZone("Coordinated Universal Time")
+    .timeZone("UTC")
     .onRun(async (context) => {
       const resp = await updateCurrentWordFunc(6, 14400);
       if (!resp.success) {
