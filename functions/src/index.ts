@@ -7,26 +7,12 @@ import * as express from "express";
 // import answers5 from "./answers/5.json";
 // import answers6 from "./answers/6.json";
 
-const gameIdEpoch: number = Date.UTC(2022, 2, 3); // March 3, 2022 UTC 00:00
-
-function getIntervalForWordLengthMs(wordLength: number): number {
-  switch (wordLength) {
-    case 4:
-    case 5:
-    case 6:
-      return 21600000; // 6h
-
-    default:
-      return 86400000; // 24h
-  }
-}
-
-function getCurrentGameIdForWordLength(wordLength: number) : number {
-  return Math.floor((Date.now() - gameIdEpoch) / getIntervalForWordLengthMs(wordLength));
-}
-
-function getTimeUntilNextGameSeconds(wordLength: number) {
-  return Math.ceil(((gameIdEpoch + getIntervalForWordLengthMs(wordLength) * (1+getCurrentGameIdForWordLength(wordLength))) - Date.now()) / 1000);
+interface GameInfo
+{
+  gameId: number;
+  answer: string;
+  startedAt: string;
+  endsAt: string;
 }
 
 admin.initializeApp();
@@ -38,38 +24,124 @@ export const getWord = functions.https.onRequest(
         resp.sendStatus(400);
         return;
       }
-
       const wordLength: number = parseInt(wordParam);
+      if (isNaN(wordLength)) {
+        resp.status(400).send("Invalid wordLength");
+        return;
+      }
+
+      const firestoreDb = admin.firestore();
+      const currentDoc = firestoreDb
+          .doc("games/english");
+      const docSnapshot = await currentDoc.get();
+      if (!docSnapshot.exists) {
+        resp.status(400).send("No ongoing game for this wordLength");
+        return;
+      }
+
+      const data = docSnapshot.get(wordLength.toString());
+      if (data === undefined) {
+        resp.status(400).send("No ongoing game for this wordLength");
+        return;
+      }
+      resp.status(200).json(data);
+    });
+
+export const updateCurrentWord = functions.https.onRequest(
+    async (req: Request, resp: express.Response) => {
+      const wordParam = req.query.wordLength as string;
+      const endsInSecondsParam = req.query.endsInSeconds as string;
+      if (wordParam === undefined || wordParam == "") {
+        resp.status(400).send("Missing wordLength");
+        return;
+      }
+      const wordLength: number = parseInt(wordParam);
+      if (isNaN(wordLength)) {
+        resp.status(400).send("Invalid wordLength");
+        return;
+      }
+      if (endsInSecondsParam === undefined || endsInSecondsParam == "") {
+        resp.status(400).send("Missing endsInSeconds");
+        return;
+      }
+      const endsInSeconds: number = parseInt(endsInSecondsParam);
+      if (isNaN(endsInSeconds)) {
+        resp.status(400).send("Invalid endsInSeconds");
+        return;
+      }
+
       const firestoreDb = admin.firestore();
       const answersDoc = firestoreDb
-          .doc("answers/english/list/" + (wordLength));
+          .doc("answers/english");
       const answersSnapshot = await answersDoc.get();
       if (!answersSnapshot.exists) {
         resp.status(400).send("WordLength has no answers");
         return;
       }
+      const answers = answersSnapshot.get(wordLength.toString());
 
+      const currentDoc = firestoreDb
+          .doc("games/english");
 
-      const answers = answersSnapshot.get("answers");
-      const gameId = getCurrentGameIdForWordLength(wordLength);
+      const docSnapshot = await currentDoc.get();
 
-      const answer = answers[gameId % answers.length];
-      resp.status(200).json({
-        answer: answer,
-        gameId: gameId,
-        nextGameInSeconds: getTimeUntilNextGameSeconds(wordLength),
-      });
+      let currentGame = docSnapshot.exists ?
+        docSnapshot.get(wordLength.toString()) as GameInfo :
+        undefined;
+
+      if (currentGame === undefined) {
+        currentGame = {
+          gameId: 0,
+          answer: answers[0],
+          startedAt: new Date().toISOString(),
+          endsAt: new Date(Date.now() + endsInSeconds * 1000).toISOString(),
+        };
+      } else {
+        // Log
+        const archivesDoc = firestoreDb.doc("games/english/archive/" + wordLength);
+        const archive = await archivesDoc.get();
+        let finalData: any = {};
+        if (archive.exists) {
+          const archiveData = archive.get(currentGame.answer);
+          if (archiveData !== undefined) {
+            finalData = archiveData;
+          }
+        }
+        finalData.lastUsed = currentGame.startedAt;
+        if (finalData.games === undefined) {
+          finalData.games = {};
+        }
+        finalData.games[currentGame.startedAt] = currentGame;
+        if (!archive.exists) {
+          await archivesDoc.create({
+            [currentGame.answer]: finalData,
+          });
+        } else {
+          await archivesDoc.update(currentGame.answer, finalData);
+        }
+
+        const newGameId = currentGame.gameId + 1;
+        currentGame = {
+          gameId: newGameId,
+          answer: answers[newGameId % answers.length],
+          startedAt: new Date().toISOString(),
+          endsAt: new Date(Date.now() + endsInSeconds * 1000).toISOString(),
+        };
+      }
+
+      await currentDoc.update(wordLength.toString(), currentGame);
+
+      resp.status(200).json(currentGame);
     });
 
 // export const deployWordLists = functions.https.onRequest(
 //     async (req: Request, resp: express.Response) => {
 //       const firestoreDb = admin.firestore();
-//       const answers = [answers4, answers5, answers6];
-//       for (let i = 0; i < answers.length; ++i) {
-//         const doc = firestoreDb.doc("answers/english/list/" + (i+4));
-//         await doc.set({
-//           "answers": answers[i],
-//         });
-//       }
+//       const doc = firestoreDb.doc("answers/english");
+//       await doc.set({
+//         4: answers4,
+//         5: answers5,
+//         6: answers6,
+//       });
 //       resp.sendStatus(200);
 //     });
