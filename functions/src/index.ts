@@ -123,7 +123,7 @@ async function updateCurrentWordFunc(wordLength: number, endsInSeconds: number):
   };
 }
 
-export const scheduledFourLetterWordUpdate = functions.pubsub.schedule("0 0 0/4 * * ? *")
+export const scheduledFourLetterWordUpdate = functions.pubsub.schedule("0 0/4 * * *")
     .timeZone("UTC")
     .onRun(async (context) => {
       const resp = await updateCurrentWordFunc(4, 14400);
@@ -133,7 +133,7 @@ export const scheduledFourLetterWordUpdate = functions.pubsub.schedule("0 0 0/4 
       return null;
     });
 
-export const scheduledFiveLetterWordUpdate = functions.pubsub.schedule("0 0 1/4 * * ? *")
+export const scheduledFiveLetterWordUpdate = functions.pubsub.schedule("0 1/4 * * *")
     .timeZone("UTC")
     .onRun(async (context) => {
       const resp = await updateCurrentWordFunc(5, 14400);
@@ -143,7 +143,7 @@ export const scheduledFiveLetterWordUpdate = functions.pubsub.schedule("0 0 1/4 
       return null;
     });
 
-export const scheduledSixLetterWordUpdate = functions.pubsub.schedule("0 0 2/4 * * ? *")
+export const scheduledSixLetterWordUpdate = functions.pubsub.schedule("0 0/4 * * *")
     .timeZone("UTC")
     .onRun(async (context) => {
       const resp = await updateCurrentWordFunc(6, 14400);
