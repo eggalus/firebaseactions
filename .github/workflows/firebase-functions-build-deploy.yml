@@ -14,9 +14,9 @@ jobs:
       - run: npm ci && npm run build
       # Deploying the functions to firebase
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
+        uses: eggalus/firebase-action@master
         with:
           args: deploy --only functions --debug
         env:
           PROJECT_ID: wordling-18531
-          GCP_SA_KEY: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLING_18531 }}'
+          GCP_SA_KEY: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLING_18531 }}
