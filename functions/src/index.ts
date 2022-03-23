@@ -123,30 +123,32 @@ async function updateCurrentWordFunc(wordLength: number, endsInSeconds: number):
   };
 }
 
-export const scheduledFourLetterWordUpdate = functions.pubsub.schedule("0 0-23/4 * * *")
+const wordPeriod = 4 * 60 * 60 + 60; // The added 60 is to account for the runtime of the function, we've also decreased the interval below, so it runs slightly more often
+
+export const scheduledFourLetterWordUpdate = functions.pubsub.schedule("59 0-23/4 * * *")
     .timeZone("UTC")
     .onRun(async (context) => {
-      const resp = await updateCurrentWordFunc(4, 14400);
+      const resp = await updateCurrentWordFunc(4, wordPeriod);
       if (!resp.success) {
         console.log(resp.data);
       }
       return null;
     });
 
-export const scheduledFiveLetterWordUpdate = functions.pubsub.schedule("0 1-23/4 * * *")
+export const scheduledFiveLetterWordUpdate = functions.pubsub.schedule("59 1-23/4 * * *")
     .timeZone("UTC")
     .onRun(async (context) => {
-      const resp = await updateCurrentWordFunc(5, 14400);
+      const resp = await updateCurrentWordFunc(5, wordPeriod);
       if (!resp.success) {
         console.log(resp.data);
       }
       return null;
     });
 
-export const scheduledSixLetterWordUpdate = functions.pubsub.schedule("0 2-23/4 * * *")
+export const scheduledSixLetterWordUpdate = functions.pubsub.schedule("59 2-23/4 * * *")
     .timeZone("UTC")
     .onRun(async (context) => {
-      const resp = await updateCurrentWordFunc(6, 14400);
+      const resp = await updateCurrentWordFunc(6, wordPeriod);
       if (!resp.success) {
         console.log(resp.data);
       }
